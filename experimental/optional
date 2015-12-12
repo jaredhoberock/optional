@@ -184,25 +184,6 @@ class optional : public detail::optional_base<T>
       return *this;
     }
 
-    template<class U,
-             class = typename std::enable_if<
-               std::is_same<typename std::decay<U>::type,T>::value
-             >::type>
-    __host__ __device__
-    optional& operator=(U&& value)
-    {
-      if(*this)
-      {
-        **this = std::forward<U>(value);
-      }
-      else
-      {
-        emplace(std::forward<U>(value));
-      }
-
-      return *this;
-    }
-
     __host__ __device__
     optional& operator=(const optional& other)
     {
@@ -228,6 +209,25 @@ class optional : public detail::optional_base<T>
       else
       {
         *this = nullopt;
+      }
+
+      return *this;
+    }
+
+    template<class U,
+             class = typename std::enable_if<
+               std::is_same<typename std::decay<U>::type,T>::value
+             >::type>
+    __host__ __device__
+    optional& operator=(U&& value)
+    {
+      if(*this)
+      {
+        **this = std::forward<U>(value);
+      }
+      else
+      {
+        emplace(std::forward<U>(value));
       }
 
       return *this;
