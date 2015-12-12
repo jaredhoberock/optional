@@ -402,6 +402,33 @@ class optional : public detail::optional_base<T>
 
 template<class T>
 __host__ __device__
+bool operator==(const optional<T>& lhs, const optional<T>& rhs)
+{
+  if(lhs && rhs)
+  {
+    return *lhs == *rhs;
+  }
+
+  return bool(lhs) == bool(rhs);
+}
+
+
+template<class T>
+__host__ __device__
+bool operator<(const optional<T>& lhs, const optional<T>& rhs)
+{
+  if(lhs && rhs)
+  {
+    return *lhs < *rhs;
+  }
+
+  return !bool(lhs) && bool(rhs);
+}
+
+
+
+template<class T>
+__host__ __device__
 optional<typename std::decay<T>::type> make_optional(T&& value)
 {
   return optional<typename std::decay<T>::type>(std::forward<T>(value));

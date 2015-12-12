@@ -53,6 +53,48 @@ int main()
   optional<std::vector<int>> o5(in_place, {10,13}, std::allocator<int>());
   assert(o5.value() == std::vector<int>({10,13}, std::allocator<int>()));
 
+  // test ==
+  {
+    optional<int> empty1;
+    optional<int> empty2;
+
+    assert(empty1 == empty2);
+    assert(empty2 == empty1);
+
+    auto o1 = make_optional(13);
+    auto o2 = make_optional(13);
+    auto o3 = make_optional(42);
+
+    assert(o1 == o2);
+    assert(!(o1 == empty1));
+    assert(!(empty1 == o1));
+    assert(o2 == o1);
+
+    assert(!(o1 == o3));
+    assert(!(o3 == o1));
+  }
+
+  // test <
+  {
+    optional<int> empty1;
+    optional<int> empty2;
+
+    assert(!(empty1 < empty2));
+    assert(!(empty2 < empty1));
+
+    auto o1 = make_optional(13);
+    auto o2 = make_optional(13);
+    auto o3 = make_optional(42);
+
+    assert(!(o1 < o2));
+    assert(!(o1 < empty1));
+    assert(empty1 < o1);
+    assert(!(o2 < o2));
+
+    assert(o1 < o3);
+    assert(!(o3 < o1));
+  }
+
   std::cout << "OK" << std::endl;
 
   return 0;
