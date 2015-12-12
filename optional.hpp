@@ -32,12 +32,12 @@
 
 #ifndef __host__
 #  define __host__
-#  define VARIANT_UNDEF_HOST
+#  define OPTIONAL_UNDEF_HOST
 #endif
 
 #ifndef __device__
 #  define __device__
-#  define VARIANT_UNDEF_DEVICE
+#  define OPTIONAL_UNDEF_DEVICE
 #endif
 
 namespace std
@@ -365,13 +365,13 @@ optional<typename std::decay<T>::type> make_optional(T&& value)
 } // end experimental
 } // end std
 
-#ifdef VARIANT_UNDEF_HOST
+#ifdef OPTIONAL_UNDEF_HOST
 #  undef __host__
-#  undef VARIANT_UNDEF_HOST
+#  undef OPTIONAL_UNDEF_HOST
 #endif
 
-#ifdef VARIANT_UNDEF_DEVICE
+#ifdef OPTIONAL_UNDEF_DEVICE
 #  undef __device__
-#  undef VARIANT_UNDEF_DEVICE
+#  undef OPTIONAL_UNDEF_DEVICE
 #endif
 
