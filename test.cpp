@@ -1,6 +1,7 @@
 #include <experimental/optional>
 #include <cassert>
 #include <iostream>
+#include <vector>
 
 int main()
 {
@@ -43,6 +44,10 @@ int main()
   // test copy construction
   optional<float> o3 = o2;
   assert(o3.value() == 7.f);
+
+  // test inplace construction
+  optional<std::vector<int>> o4(in_place, 10, 13);
+  assert(o4.value() == std::vector<int>(10,13));
 
   std::cout << "OK" << std::endl;
 

@@ -49,6 +49,9 @@ namespace experimental
 struct nullopt_t {};
 constexpr nullopt_t nullopt{};
 
+struct in_place_t {};
+constexpr in_place_t in_place{};
+
 
 class bad_optional_access : public std::logic_error
 {
@@ -147,6 +150,14 @@ class optional : public detail::optional_base<T>
       : contains_value_(false)
     {
       emplace(std::move(value));
+    }
+
+    template<class... Args>
+    __host__ __device__
+    optional(in_place_t, Args&&... args)
+      : contains_value_(false)
+    {
+      emplace(std::forward<Args>(args)...);
     }
 
     __host__ __device__
