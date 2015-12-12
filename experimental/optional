@@ -459,6 +459,58 @@ bool operator<(nullopt_t, const optional<T>& rhs)
 }
 
 
+// comparison with T
+template<class T>
+__host__ __device__
+bool operator==(const optional<T>& lhs, const T& rhs)
+{
+  if(*lhs)
+  {
+    return *lhs == rhs;
+  }
+
+  return false;
+}
+
+
+template<class T>
+__host__ __device__
+bool operator==(const T& lhs, const optional<T>& rhs)
+{
+  if(*rhs)
+  {
+    return lhs == *rhs;
+  }
+
+  return false;
+}
+
+
+template<class T>
+__host__ __device__
+bool operator<(const optional<T>& lhs, const T& rhs)
+{
+  if(*lhs)
+  {
+    return *lhs < rhs;
+  }
+
+  return true;
+}
+
+template<class T>
+__host__ __device__
+bool operator<(const T& lhs, const optional<T>& rhs)
+{
+  if(*rhs)
+  {
+    return lhs < *rhs;
+  }
+
+  return false;
+}
+
+
 
 template<class T>
 __host__ __device__

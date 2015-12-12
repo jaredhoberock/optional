@@ -121,6 +121,44 @@ int main()
     assert(nullopt < o1);
   }
 
+  // test == with a value
+  {
+    int value = 13;
+
+    optional<int> empty;
+
+    assert(!(empty == value));
+    assert(!(value == empty));
+
+    auto o1 = make_optional(13);
+    auto o2 = make_optional(42);
+
+    assert(value == o1);
+    assert(o1 == value);
+
+    assert(!(value == o2));
+    assert(!(o2 == value));
+  }
+
+  // test < with a value
+  {
+    int value = 13;
+
+    optional<int> empty;
+
+    assert(empty < value);
+    assert(!(value < empty));
+
+    auto o1 = make_optional(13);
+    auto o2 = make_optional(42);
+
+    assert(!(value < o1));
+    assert(!(o1 < value));
+
+    assert(value < o2);
+    assert(!(o2 < value));
+  }
+
   std::cout << "OK" << std::endl;
 
   return 0;
