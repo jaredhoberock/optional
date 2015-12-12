@@ -464,7 +464,7 @@ template<class T>
 __host__ __device__
 bool operator==(const optional<T>& lhs, const T& rhs)
 {
-  if(*lhs)
+  if(lhs)
   {
     return *lhs == rhs;
   }
@@ -477,7 +477,7 @@ template<class T>
 __host__ __device__
 bool operator==(const T& lhs, const optional<T>& rhs)
 {
-  if(*rhs)
+  if(rhs)
   {
     return lhs == *rhs;
   }
@@ -490,7 +490,7 @@ template<class T>
 __host__ __device__
 bool operator<(const optional<T>& lhs, const T& rhs)
 {
-  if(*lhs)
+  if(lhs)
   {
     return *lhs < rhs;
   }
@@ -502,7 +502,7 @@ template<class T>
 __host__ __device__
 bool operator<(const T& lhs, const optional<T>& rhs)
 {
-  if(*rhs)
+  if(rhs)
   {
     return lhs < *rhs;
   }
