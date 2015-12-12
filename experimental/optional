@@ -30,6 +30,7 @@
 #include <type_traits>
 #include <stdexcept>
 #include <initializer_list>
+#include <functional>
 
 #ifndef __host__
 #  define __host__
@@ -520,15 +521,31 @@ optional<typename std::decay<T>::type> make_optional(T&& value)
 }
 
 
+} // end experimental
+
+
 template<class T>
 __host__ __device__
-void swap(optional<T>& a, optional<T>& b)
+void swap(experimental::optional<T>& a, experimental::optional<T>& b)
 {
   a.swap(b);
 }
 
 
-} // end experimental
+template<class>
+struct hash;
+
+template<class T>
+struct hash<experimental::optional<T>>
+{
+  #pragma nv_exec_check_disable
+  __host__ __device__
+  size_t operator()(const experimental::optional<T>& key) const
+  {
+    return bool(key) ? std::hash<T>()(*key) : size_t(0);
+  }
+};
+
 } // end std
 
 #ifdef OPTIONAL_UNDEF_HOST
