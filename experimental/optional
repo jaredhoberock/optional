@@ -295,6 +295,17 @@ class optional : public detail::optional_base<T>
       return std::move(**this);
     }
 
+    __host__ __device__
+    const T&& value() const &&
+    {
+      if(!*this)
+      {
+        detail::throw_bad_optional_access("optional::value(): optional does not contain a value");
+      }
+
+      return std::move(**this);
+    }
+
     template<class U>
     __host__ __device__
     T value_or(U&& default_value) const &
