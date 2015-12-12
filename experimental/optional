@@ -29,6 +29,7 @@
 #include <utility>
 #include <type_traits>
 #include <stdexcept>
+#include <initializer_list>
 
 #ifndef __host__
 #  define __host__
@@ -147,9 +148,8 @@ class optional : public detail::optional_base<T>
 
     __host__ __device__
     optional(T&& value)
-      : contains_value_(false)
+      : optional(in_place, std::forward<T>(value))
     {
-      emplace(std::move(value));
     }
 
     template<class... Args>
@@ -158,6 +158,17 @@ class optional : public detail::optional_base<T>
       : contains_value_(false)
     {
       emplace(std::forward<Args>(args)...);
+    }
+
+    template<class U, class... Args,
+             class = typename std::enable_if<
+               std::is_constructible<T, std::initializer_list<U>&, Args&&...>::value
+             >::type>
+    __host__ __device__
+    optional(in_place_t, std::initializer_list<U> ilist, Args&&... args)
+      : contains_value_(false)
+    {
+      emplace(ilist, std::forward<Args>(args)...);
     }
 
     __host__ __device__
@@ -228,7 +239,20 @@ class optional : public detail::optional_base<T>
     {
       clear();
 
-      new (operator->()) T(std::forward<Args>(args)...) ;
+      new (operator->()) T(std::forward<Args>(args)...);
+      contains_value_ = true;
+    }
+
+    template<class U, class... Args,
+             class = typename std::enable_if<
+               std::is_constructible<T,std::initializer_list<U>&, Args&&...>::value
+             >::type>
+    __host__ __device__
+    void emplace(std::initializer_list<U> ilist, Args&&... args)
+    {
+      clear();
+
+      new (operator->()) T(ilist, std::forward<Args>(args)...);
       contains_value_ = true;
     }
 

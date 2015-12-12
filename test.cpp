@@ -49,6 +49,10 @@ int main()
   optional<std::vector<int>> o4(in_place, 10, 13);
   assert(o4.value() == std::vector<int>(10,13));
 
+  // test inplace initializer_list construction
+  optional<std::vector<int>> o5(in_place, {10,13}, std::allocator<int>());
+  assert(o5.value() == std::vector<int>({10,13}, std::allocator<int>()));
+
   std::cout << "OK" << std::endl;
 
   return 0;
