@@ -95,6 +95,32 @@ int main()
     assert(!(o3 < o1));
   }
 
+  // test == with nullopt
+  {
+    optional<int> empty;
+
+    assert(empty == nullopt);
+    assert(nullopt == empty);
+
+    auto o1 = make_optional(13);
+
+    assert(!(o1 == nullopt));
+    assert(!(nullopt == o1));
+  }
+
+  // test < with nullopt
+  {
+    optional<int> empty;
+
+    assert(!(empty < nullopt));
+    assert(!(nullopt < empty));
+
+    auto o1 = make_optional(13);
+
+    assert(!(o1 < nullopt));
+    assert(nullopt < o1);
+  }
+
   std::cout << "OK" << std::endl;
 
   return 0;

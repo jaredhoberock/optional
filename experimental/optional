@@ -400,6 +400,7 @@ class optional : public detail::optional_base<T>
 };
 
 
+// comparison
 template<class T>
 __host__ __device__
 bool operator==(const optional<T>& lhs, const optional<T>& rhs)
@@ -423,6 +424,38 @@ bool operator<(const optional<T>& lhs, const optional<T>& rhs)
   }
 
   return !bool(lhs) && bool(rhs);
+}
+
+
+// comparison with nullopt_t
+template<class T>
+__host__ __device__
+bool operator==(const optional<T>& lhs, nullopt_t)
+{
+  return lhs == optional<T>(nullopt);
+}
+
+template<class T>
+__host__ __device__
+bool operator==(nullopt_t, const optional<T>& rhs)
+{
+  return optional<T>(nullopt) == rhs;
+}
+
+
+template<class T>
+__host__ __device__
+bool operator<(const optional<T>& lhs, nullopt_t)
+{
+  return lhs < optional<T>(nullopt);
+}
+
+
+template<class T>
+__host__ __device__
+bool operator<(nullopt_t, const optional<T>& rhs)
+{
+  return optional<T>(nullopt) < rhs;
 }
 
 
