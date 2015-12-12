@@ -520,6 +520,14 @@ optional<typename std::decay<T>::type> make_optional(T&& value)
 }
 
 
+template<class T>
+__host__ __device__
+void swap(optional<T>& a, optional<T>& b)
+{
+  a.swap(b);
+}
+
+
 } // end experimental
 } // end std
 

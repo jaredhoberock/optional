@@ -159,6 +159,27 @@ int main()
     assert(!(o2 < value));
   }
 
+  // test swap
+  {
+    auto o1 = make_optional(13);
+    auto o2 = make_optional(42);
+
+    // member swap
+    o1.swap(o2);
+    assert(o1 == 42);
+    assert(o2 == 13);
+
+    // free swap
+    std::experimental::swap(o1,o2);
+    assert(o1 == 13);
+    assert(o2 == 42);
+
+    // ADL swap
+    swap(o1,o2);
+    assert(o1 == 42);
+    assert(o2 == 13);
+  }
+
   std::cout << "OK" << std::endl;
 
   return 0;
