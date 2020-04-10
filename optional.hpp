@@ -1,4 +1,4 @@
-// Copyright (c) 2015, NVIDIA CORPORATION. All rights reserved.
+// Copyright (c) 2020, NVIDIA CORPORATION. All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
@@ -26,26 +26,62 @@
 
 #pragma once
 
-#include <utility>
-#include <type_traits>
-#include <stdexcept>
-#include <initializer_list>
+#include <cassert>
 #include <functional>
+#include <initializer_list>
+#include <stdexcept>
+#include <type_traits>
+#include <utility>
 
-#ifndef __host__
-#  define __host__
-#  define OPTIONAL_UNDEF_HOST
+
+// allow the user to define an annotation to apply to these functions
+#ifndef OPTIONAL_ANNOTATION
+#  if defined(__CUDACC__) && !(defined(__CUDA__) && defined(__clang__))
+#    define OPTIONAL_ANNOTATION __host__ __device__
+#  else
+#    define OPTIONAL_ANNOTATION
+#    define OPTIONAL_ANNOTATION_NEEDS_UNDEF
+#  endif
 #endif
 
-#ifndef __device__
-#  define __device__
-#  define OPTIONAL_UNDEF_DEVICE
+
+// define the incantation to silence nvcc errors concerning __host__ __device__ functions
+#if defined(__CUDACC__) && !(defined(__CUDA__) && defined(__clang__))
+#  define OPTIONAL_EXEC_CHECK_DISABLE \
+#  pragma nv_exec_check_disable
+#else
+#  define OPTIONAL_EXEC_CHECK_DISABLE
 #endif
 
-namespace std
-{
-namespace experimental
-{
+// allow the user to define a namespace for these functions
+#if !defined(OPTIONAL_NAMESPACE)
+
+#  if defined(OPTIONAL_NAMESPACE_OPEN_BRACE) or defined(OPTIONAL_NAMESPACE_CLOSE_BRACE)
+#    error "All or none of OPTIONAL_NAMESPACE, OPTIONAL_NAMESPACE_OPEN_BRACE, and OPTIONAL_NAMESPACE_CLOSE_BRACE must be defined."
+#  endif
+
+#  define OPTIONAL_NAMESPACE std
+#  define OPTIONAL_NAMESPACE_OPEN_BRACE namespace std {
+#  define OPTIONAL_NAMESPACE_CLOSE_BRACE }
+#  define OPTIONAL_NAMESPACE_NEEDS_UNDEF
+
+#else
+
+#  if !defined(OPTIONAL_NAMESPACE_OPEN_BRACE) or !defined(OPTIONAL_NAMESPACE_CLOSE_BRACE)
+#    error "All or none of OPTIONAL_NAMESPACE, OPTIONAL_NAMESPACE_OPEN_BRACE, and OPTIONAL_NAMESPACE_CLOSE_BRACE must be defined."
+#  endif
+
+#endif
+
+
+// allow the user to define a singly-nested namespace for private implementation details
+#if !defined(OPTIONAL_DETAIL_NAMESPACE)
+#  define OPTIONAL_DETAIL_NAMESPACE detail
+#  define OPTIONAL_DETAIL_NAMESPACE_NEEDS_UNDEF
+#endif
+
+
+OPTIONAL_NAMESPACE_OPEN_BRACE
 
 
 struct nullopt_t {};
@@ -63,11 +99,11 @@ class bad_optional_access : public std::logic_error
 };
 
 
-namespace detail
+namespace OPTIONAL_DETAIL_NAMESPACE
 {
 
 
-__host__ __device__
+OPTIONAL_ANNOTATION
 inline void throw_bad_optional_access(const char* what_arg)
 {
 #ifdef __CUDA_ARCH__
@@ -78,11 +114,10 @@ inline void throw_bad_optional_access(const char* what_arg)
 #endif
 }
 
-#if defined(__NVCC__) && !(defined(__clang__) && defined(__CUDA__))
-#pragma nv_exec_check_disable
-#endif
+
+OPTIONAL_EXEC_CHECK_DISABLE
 template<class T>
-__host__ __device__
+OPTIONAL_ANNOTATION
 static void optional_swap(T& a, T& b)
 {
   using std::swap;
@@ -111,20 +146,20 @@ template<class T>
 struct optional_base<T,true> : T {};
 
 
-} // end detail
+} // end OPTIONAL_DETAIL_NAMESPACE
 
 
 template<class T>
-class optional : public detail::optional_base<T>
+class optional : public OPTIONAL_DETAIL_NAMESPACE::optional_base<T>
 {
   public:
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     optional(nullopt_t) : contains_value_{false} {}
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     optional() : optional(nullopt) {}
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     optional(const optional& other)
       : contains_value_(false)
     {
@@ -134,7 +169,7 @@ class optional : public detail::optional_base<T>
       }
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     optional(optional&& other)
       : contains_value_(false)
     {
@@ -144,21 +179,21 @@ class optional : public detail::optional_base<T>
       }
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     optional(const T& value)
       : contains_value_(false)
     {
       emplace(value);
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     optional(T&& value)
       : optional(in_place, std::forward<T>(value))
     {
     }
 
     template<class... Args>
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     optional(in_place_t, Args&&... args)
       : contains_value_(false)
     {
@@ -169,27 +204,27 @@ class optional : public detail::optional_base<T>
              class = typename std::enable_if<
                std::is_constructible<T, std::initializer_list<U>&, Args&&...>::value
              >::type>
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     optional(in_place_t, std::initializer_list<U> ilist, Args&&... args)
       : contains_value_(false)
     {
       emplace(ilist, std::forward<Args>(args)...);
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     ~optional()
     {
       clear();
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     optional& operator=(nullopt_t)
     {
       clear();
       return *this;
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     optional& operator=(const optional& other)
     {
       if(other)
@@ -204,7 +239,7 @@ class optional : public detail::optional_base<T>
       return *this;
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     optional& operator=(optional&& other)
     {
       if(other)
@@ -223,7 +258,7 @@ class optional : public detail::optional_base<T>
              class = typename std::enable_if<
                std::is_same<typename std::decay<U>::type,T>::value
              >::type>
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     optional& operator=(U&& value)
     {
       if(*this)
@@ -239,7 +274,7 @@ class optional : public detail::optional_base<T>
     }
 
     template<class... Args>
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     void emplace(Args&&... args)
     {
       clear();
@@ -252,7 +287,7 @@ class optional : public detail::optional_base<T>
              class = typename std::enable_if<
                std::is_constructible<T,std::initializer_list<U>&, Args&&...>::value
              >::type>
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     void emplace(std::initializer_list<U> ilist, Args&&... args)
     {
       clear();
@@ -261,78 +296,78 @@ class optional : public detail::optional_base<T>
       contains_value_ = true;
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     explicit operator bool() const
     {
       return contains_value_;
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     T& value() &
     {
       if(!*this)
       {
-        detail::throw_bad_optional_access("optional::value(): optional does not contain a value");
+        OPTIONAL_DETAIL_NAMESPACE::throw_bad_optional_access("optional::value(): optional does not contain a value");
       }
 
       return **this;
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     const T& value() const &
     {
       if(!*this)
       {
-        detail::throw_bad_optional_access("optional::value(): optional does not contain a value");
+        OPTIONAL_DETAIL_NAMESPACE::throw_bad_optional_access("optional::value(): optional does not contain a value");
       }
 
       return **this;
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     T&& value() &&
     {
       if(!*this)
       {
-        detail::throw_bad_optional_access("optional::value(): optional does not contain a value");
+        OPTIONAL_DETAIL_NAMESPACE::throw_bad_optional_access("optional::value(): optional does not contain a value");
       }
 
       return std::move(**this);
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     const T&& value() const &&
     {
       if(!*this)
       {
-        detail::throw_bad_optional_access("optional::value(): optional does not contain a value");
+        OPTIONAL_DETAIL_NAMESPACE::throw_bad_optional_access("optional::value(): optional does not contain a value");
       }
 
       return std::move(**this);
     }
 
     template<class U>
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     T value_or(U&& default_value) const &
     {
       return bool(*this) ? **this : static_cast<T>(std::forward<U>(default_value));
     }
 
     template<class U>
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     T value_or(U&& default_value) &&
     {
       return bool(*this) ? std::move(**this) : static_cast<T>(std::forward<U>(default_value));
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     void swap(optional& other)
     {
       if(*other)
       {
         if(*this)
         {
-          detail::optional_swap(**this, *other);
+          OPTIONAL_DETAIL_NAMESPACE::optional_swap(**this, *other);
         }
         else
         {
@@ -354,44 +389,44 @@ class optional : public detail::optional_base<T>
       }
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     const T* operator->() const
     {
       return reinterpret_cast<const T*>(this);
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     T* operator->()
     {
       return reinterpret_cast<T*>(this);
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     const T& operator*() const &
     {
       return *operator->();
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     T& operator*() &
     {
       return *operator->();
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     const T&& operator*() const &&
     {
       return *operator->();
     }
 
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     T&& operator*() &&
     {
       return *operator->();
     }
 
   private:
-    __host__ __device__
+    OPTIONAL_ANNOTATION
     void clear()
     {
       if(*this)
@@ -407,7 +442,7 @@ class optional : public detail::optional_base<T>
 
 // comparison
 template<class T>
-__host__ __device__
+OPTIONAL_ANNOTATION
 bool operator==(const optional<T>& lhs, const optional<T>& rhs)
 {
   if(lhs && rhs)
@@ -420,7 +455,7 @@ bool operator==(const optional<T>& lhs, const optional<T>& rhs)
 
 
 template<class T>
-__host__ __device__
+OPTIONAL_ANNOTATION
 bool operator<(const optional<T>& lhs, const optional<T>& rhs)
 {
   if(lhs && rhs)
@@ -434,14 +469,14 @@ bool operator<(const optional<T>& lhs, const optional<T>& rhs)
 
 // comparison with nullopt_t
 template<class T>
-__host__ __device__
+OPTIONAL_ANNOTATION
 bool operator==(const optional<T>& lhs, nullopt_t)
 {
   return lhs == optional<T>(nullopt);
 }
 
 template<class T>
-__host__ __device__
+OPTIONAL_ANNOTATION
 bool operator==(nullopt_t, const optional<T>& rhs)
 {
   return optional<T>(nullopt) == rhs;
@@ -449,7 +484,7 @@ bool operator==(nullopt_t, const optional<T>& rhs)
 
 
 template<class T>
-__host__ __device__
+OPTIONAL_ANNOTATION
 bool operator<(const optional<T>& lhs, nullopt_t)
 {
   return lhs < optional<T>(nullopt);
@@ -457,7 +492,7 @@ bool operator<(const optional<T>& lhs, nullopt_t)
 
 
 template<class T>
-__host__ __device__
+OPTIONAL_ANNOTATION
 bool operator<(nullopt_t, const optional<T>& rhs)
 {
   return optional<T>(nullopt) < rhs;
@@ -466,7 +501,7 @@ bool operator<(nullopt_t, const optional<T>& rhs)
 
 // comparison with T
 template<class T>
-__host__ __device__
+OPTIONAL_ANNOTATION
 bool operator==(const optional<T>& lhs, const T& rhs)
 {
   if(lhs)
@@ -479,7 +514,7 @@ bool operator==(const optional<T>& lhs, const T& rhs)
 
 
 template<class T>
-__host__ __device__
+OPTIONAL_ANNOTATION
 bool operator==(const T& lhs, const optional<T>& rhs)
 {
   if(rhs)
@@ -492,7 +527,7 @@ bool operator==(const T& lhs, const optional<T>& rhs)
 
 
 template<class T>
-__host__ __device__
+OPTIONAL_ANNOTATION
 bool operator<(const optional<T>& lhs, const T& rhs)
 {
   if(lhs)
@@ -503,8 +538,9 @@ bool operator<(const optional<T>& lhs, const T& rhs)
   return true;
 }
 
+
 template<class T>
-__host__ __device__
+OPTIONAL_ANNOTATION
 bool operator<(const T& lhs, const optional<T>& rhs)
 {
   if(rhs)
@@ -516,32 +552,34 @@ bool operator<(const T& lhs, const optional<T>& rhs)
 }
 
 
-
 template<class T>
-__host__ __device__
+OPTIONAL_ANNOTATION
 optional<typename std::decay<T>::type> make_optional(T&& value)
 {
   return optional<typename std::decay<T>::type>(std::forward<T>(value));
 }
 
 
-} // end experimental
-
-
 template<class T>
-__host__ __device__
-void swap(experimental::optional<T>& a, experimental::optional<T>& b)
+OPTIONAL_ANNOTATION
+void swap(optional<T>& a, optional<T>& b)
 {
   a.swap(b);
 }
 
 
-template<class T>
-struct hash<experimental::optional<T>>
+OPTIONAL_NAMESPACE_CLOSE_BRACE
+
+
+namespace std
 {
-  #pragma nv_exec_check_disable
-  __host__ __device__
-  size_t operator()(const experimental::optional<T>& key) const
+
+template<class T>
+struct hash<OPTIONAL_NAMESPACE::optional<T>>
+{
+  OPTIONAL_EXEC_CHECK_DISABLE
+  OPTIONAL_ANNOTATION
+  size_t operator()(const OPTIONAL_NAMESPACE::optional<T>& key) const
   {
     return bool(key) ? std::hash<T>()(*key) : size_t(0);
   }
@@ -549,13 +587,23 @@ struct hash<experimental::optional<T>>
 
 } // end std
 
-#ifdef OPTIONAL_UNDEF_HOST
-#  undef __host__
-#  undef OPTIONAL_UNDEF_HOST
+
+#ifdef OPTIONAL_ANNOTATION_NEEDS_UNDEF
+#  undef OPTIONAL_ANNOTATION
+#  undef OPTIONAL_ANNOTATION_NEEDS_UNDEF
 #endif
 
-#ifdef OPTIONAL_UNDEF_DEVICE
-#  undef __device__
-#  undef OPTIONAL_UNDEF_DEVICE
+#ifdef OPTIONAL_NAMESPACE_NEEDS_UNDEF
+#  undef OPTIONAL_NAMESPACE
+#  undef OPTIONAL_NAMESPACE_OPEN_BRACE
+#  undef OPTIONAL_NAMESPACE_CLOSE_BRACE
+#  undef OPTIONAL_NAMESPACE_NEEDS_UNDEF
 #endif
+
+#ifdef OPTIONAL_DETAIL_NAMESPACE_NEEDS_UNDEF
+#  undef OPTIONAL_DETAIL_NAMESPACE
+#  undef OPTIONAL_DETAIL_NAMESPACE_NEEDS_UNDEF
+#endif
+
+#undef OPTIONAL_EXEC_CHECK_DISABLE
 
