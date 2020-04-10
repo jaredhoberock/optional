@@ -60,9 +60,9 @@
 #    error "All or none of OPTIONAL_NAMESPACE, OPTIONAL_NAMESPACE_OPEN_BRACE, and OPTIONAL_NAMESPACE_CLOSE_BRACE must be defined."
 #  endif
 
-#  define OPTIONAL_NAMESPACE std
-#  define OPTIONAL_NAMESPACE_OPEN_BRACE namespace std {
-#  define OPTIONAL_NAMESPACE_CLOSE_BRACE }
+#  define OPTIONAL_NAMESPACE
+#  define OPTIONAL_NAMESPACE_OPEN_BRACE
+#  define OPTIONAL_NAMESPACE_CLOSE_BRACE
 #  define OPTIONAL_NAMESPACE_NEEDS_UNDEF
 
 #else
@@ -154,14 +154,14 @@ class optional : public OPTIONAL_DETAIL_NAMESPACE::optional_base<T>
 {
   public:
     OPTIONAL_ANNOTATION
-    optional(nullopt_t) : contains_value_{false} {}
+    optional(nullopt_t) : has_value_{false} {}
 
     OPTIONAL_ANNOTATION
     optional() : optional(nullopt) {}
 
     OPTIONAL_ANNOTATION
     optional(const optional& other)
-      : contains_value_(false)
+      : has_value_(false)
     {
       if(other)
       {
@@ -171,7 +171,7 @@ class optional : public OPTIONAL_DETAIL_NAMESPACE::optional_base<T>
 
     OPTIONAL_ANNOTATION
     optional(optional&& other)
-      : contains_value_(false)
+      : has_value_(false)
     {
       if(other)
       {
@@ -181,7 +181,7 @@ class optional : public OPTIONAL_DETAIL_NAMESPACE::optional_base<T>
 
     OPTIONAL_ANNOTATION
     optional(const T& value)
-      : contains_value_(false)
+      : has_value_(false)
     {
       emplace(value);
     }
@@ -195,7 +195,7 @@ class optional : public OPTIONAL_DETAIL_NAMESPACE::optional_base<T>
     template<class... Args>
     OPTIONAL_ANNOTATION
     optional(in_place_t, Args&&... args)
-      : contains_value_(false)
+      : has_value_(false)
     {
       emplace(std::forward<Args>(args)...);
     }
@@ -206,7 +206,7 @@ class optional : public OPTIONAL_DETAIL_NAMESPACE::optional_base<T>
              >::type>
     OPTIONAL_ANNOTATION
     optional(in_place_t, std::initializer_list<U> ilist, Args&&... args)
-      : contains_value_(false)
+      : has_value_(false)
     {
       emplace(ilist, std::forward<Args>(args)...);
     }
@@ -214,13 +214,13 @@ class optional : public OPTIONAL_DETAIL_NAMESPACE::optional_base<T>
     OPTIONAL_ANNOTATION
     ~optional()
     {
-      clear();
+      reset();
     }
 
     OPTIONAL_ANNOTATION
     optional& operator=(nullopt_t)
     {
-      clear();
+      reset();
       return *this;
     }
 
@@ -254,6 +254,7 @@ class optional : public OPTIONAL_DETAIL_NAMESPACE::optional_base<T>
       return *this;
     }
 
+    OPTIONAL_EXEC_CHECK_DISABLE
     template<class U,
              class = typename std::enable_if<
                std::is_same<typename std::decay<U>::type,T>::value
@@ -273,14 +274,15 @@ class optional : public OPTIONAL_DETAIL_NAMESPACE::optional_base<T>
       return *this;
     }
 
+    OPTIONAL_EXEC_CHECK_DISABLE
     template<class... Args>
     OPTIONAL_ANNOTATION
     void emplace(Args&&... args)
     {
-      clear();
+      reset();
 
       new (operator->()) T(std::forward<Args>(args)...);
-      contains_value_ = true;
+      has_value_ = true;
     }
 
     template<class U, class... Args,
@@ -290,16 +292,22 @@ class optional : public OPTIONAL_DETAIL_NAMESPACE::optional_base<T>
     OPTIONAL_ANNOTATION
     void emplace(std::initializer_list<U> ilist, Args&&... args)
     {
-      clear();
+      reset();
 
       new (operator->()) T(ilist, std::forward<Args>(args)...);
-      contains_value_ = true;
+      has_value_ = true;
+    }
+
+    OPTIONAL_ANNOTATION
+    bool has_value() const
+    {
+      return has_value_;
     }
 
     OPTIONAL_ANNOTATION
     explicit operator bool() const
     {
-      return contains_value_;
+      return has_value();
     }
 
     OPTIONAL_ANNOTATION
@@ -363,7 +371,7 @@ class optional : public OPTIONAL_DETAIL_NAMESPACE::optional_base<T>
     OPTIONAL_ANNOTATION
     void swap(optional& other)
     {
-      if(*other)
+      if(other)
       {
         if(*this)
         {
@@ -425,18 +433,19 @@ class optional : public OPTIONAL_DETAIL_NAMESPACE::optional_base<T>
       return *operator->();
     }
 
-  private:
+    OPTIONAL_EXEC_CHECK_DISABLE
     OPTIONAL_ANNOTATION
-    void clear()
+    void reset()
     {
       if(*this)
       {
         (**this).~T();
-        contains_value_ = false;
+        has_value_ = false;
       }
     }
 
-    bool contains_value_;
+  private:
+    bool has_value_;
 };
 
 
@@ -538,7 +547,6 @@ bool operator<(const optional<T>& lhs, const T& rhs)
   return true;
 }
 
-
 template<class T>
 OPTIONAL_ANNOTATION
 bool operator<(const T& lhs, const optional<T>& rhs)
@@ -550,6 +558,7 @@ bool operator<(const T& lhs, const optional<T>& rhs)
 
   return false;
 }
+
 
 
 template<class T>
